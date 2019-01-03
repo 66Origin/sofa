@@ -18,7 +18,10 @@ pub struct Client {
     _gzip: bool,
     _timeout: u8,
     pub uri: String,
-    pub db_prefix: String
+    pub db_prefix: String,
+    
+    // (username, password)
+    credentials: Option<(String, Option<String>)>
 }
 
 impl Client {
@@ -34,8 +37,14 @@ impl Client {
             _gzip: true,
             _timeout: 4,
             dbs: Vec::new(),
-            db_prefix: String::new()
+            db_prefix: String::new(),
+            credentials: None,
         })
+    }
+
+    pub fn with_basic_auth<S: Into<String>>(mut self, username: S, password: Option<S>) -> Self {
+        self.credentials = Some((username.into(), password.map(S::into)));
+        self
     }
 
     fn create_client(&self) -> Result<reqwest::Client, Error> {
@@ -171,6 +180,10 @@ impl Client {
         let mut req = self._client.request(method, &uri);
         req.header(reqwest::header::Referer::new(uri.clone()));
         req.header(reqwest::header::ContentType::json());
+
+        if let Some((ref username, ref password)) = self.credentials {
+            req.basic_auth(username.clone(), password.clone());
+        }
 
         Ok(req)
     }
