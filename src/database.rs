@@ -20,10 +20,10 @@ pub struct Database {
 }
 
 impl Database {
-    pub fn new(name: String, client: Client) -> Database {
+    pub fn new<S: Into<String>>(name: S, client: Client) -> Database {
         Database {
             _client: client,
-            name: name,
+            name: name.into(),
         }
     }
 
@@ -42,10 +42,10 @@ impl Database {
         result
     }
 
-    fn create_compact_path(&self, design_name: &'static str) -> String {
+    fn create_compact_path<S: AsRef<str>>(&self, design_name: S) -> String {
         let mut result: String = self.name.clone();
         result.push_str("/_compact/");
-        result.push_str(design_name);
+        result.push_str(design_name.as_ref());
         result
     }
 
@@ -82,7 +82,7 @@ impl Database {
     }
 
     /// Starts the compaction of a given index
-    pub fn compact_index(&self, index: &'static str) -> bool {
+    pub fn compact_index<S: AsRef<str>>(&self, index: S) -> bool {
         let request = self._client.post(self.create_compact_path(index), "".into());
 
         request
@@ -281,12 +281,12 @@ impl Database {
 
     /// Inserts an index in a naive way, if it already exists, will throw an
     /// `Err`
-    pub fn insert_index(&self, name: String, spec: IndexFields) -> Result<IndexCreated, Error> {
+    pub fn insert_index<S: Into<String>>(&self, name: S, spec: IndexFields) -> Result<IndexCreated, Error> {
         let response = self._client
             .post(
                 self.create_document_path("_index".into()),
                 js!(json!({
-                "name": name,
+                "name": name.into(),
                 "index": spec
             })),
             )?
@@ -314,19 +314,20 @@ impl Database {
     /// Method to ensure an index is created on the database with the following
     /// spec. Returns `true` when we created a new one, or `false` when the
     /// index was already existing.
-    pub fn ensure_index(&self, name: String, spec: IndexFields) -> Result<bool, Error> {
+    pub fn ensure_index<S: Into<String>>(&self, name: S, spec: IndexFields) -> Result<bool, Error> {
+        let n = name.into();
         let db_indexes = self.read_indexes()?;
 
         // We look for our index
         for i in db_indexes.indexes.into_iter() {
-            if i.name == name {
+            if &i.name == &n {
                 // Found? Ok let's return
                 return Ok(false);
             }
         }
 
         // Let's create it then
-        let _ = self.insert_index(name, spec)?;
+        let _ = self.insert_index(n, spec)?;
 
         // Created and alright
         Ok(true)
