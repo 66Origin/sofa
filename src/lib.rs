@@ -156,14 +156,14 @@ mod sofa_tests {
 
         #[test]
         fn a_should_check_couchdbs_status() {
-            let client = Client::new("http://localhost:5984".into()).unwrap();
+            let client = Client::new("http://localhost:5984").unwrap();
             let status = client.check_status();
             assert!(status.is_ok());
         }
 
         #[test]
         fn b_should_create_sofa_test_db() {
-            let client = Client::new("http://localhost:5984".into()).unwrap();
+            let client = Client::new("http://localhost:5984").unwrap();
             let dbw = client.db("b_should_create_sofa_test_db");
             assert!(dbw.is_ok());
 
@@ -172,7 +172,7 @@ mod sofa_tests {
 
         #[test]
         fn c_should_create_a_document() {
-            let client = Client::new("http://localhost:5984".into()).unwrap();
+            let client = Client::new("http://localhost:5984").unwrap();
             let dbw = client.db("c_should_create_a_document");
             assert!(dbw.is_ok());
             let db = dbw.unwrap();
@@ -191,7 +191,7 @@ mod sofa_tests {
 
         #[test]
         fn d_should_destroy_the_db() {
-            let client = Client::new("http://localhost:5984".into()).unwrap();
+            let client = Client::new("http://localhost:5984").unwrap();
             let _ = client.db("d_should_destroy_the_db");
 
             assert!(client.destroy_db("d_should_destroy_the_db").unwrap());
@@ -202,7 +202,7 @@ mod sofa_tests {
         use *;
 
         fn setup(dbname: &'static str) -> (Client, Database, Document) {
-            let client = Client::new("http://localhost:5984".into()).unwrap();
+            let client = Client::new("http://localhost:5984").unwrap();
             let dbw = client.db(dbname);
             assert!(dbw.is_ok());
             let db = dbw.unwrap();
@@ -257,7 +257,7 @@ mod sofa_tests {
 
             let spec = types::IndexFields::new(vec![types::SortSpec::Simple(s!("thing"))]);
 
-            let res = db.insert_index("thing-index".into(), spec);
+            let res = db.insert_index("thing-index", spec);
 
             assert!(res.is_ok());
 
@@ -289,7 +289,7 @@ mod sofa_tests {
 
             let spec = types::IndexFields::new(vec![types::SortSpec::Simple(s!("thing"))]);
 
-            let res = db.ensure_index("thing-index".into(), spec);
+            let res = db.ensure_index("thing-index", spec);
             assert!(res.is_ok());
 
             teardown(client, "f_should_ensure_index_in_db");

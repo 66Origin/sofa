@@ -68,8 +68,8 @@ impl Document {
 
     /// Recursively populates field (must be an array of IDs from another
     /// database) with provided database documents
-    pub fn populate(&mut self, field: &String, db: Database) -> &Self {
-        let ref val = self[field].clone();
+    pub fn populate<S: AsRef<str>>(&mut self, field: S, db: Database) -> &Self {
+        let ref val = self[field.as_ref()].clone();
         if *val == Value::Null {
             return self;
         }
@@ -84,7 +84,7 @@ impl Document {
 
         match data {
             Ok(data) => {
-                self[field] = data.into_iter()
+                self[field.as_ref()] = data.into_iter()
                     .filter_map(|d: Value| {
                         let did = match d["_id"].as_str() {
                             Some(did) => did,
