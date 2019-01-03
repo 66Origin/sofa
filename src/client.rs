@@ -22,7 +22,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new(uri: String) -> Result<Client, Error> {
+    pub fn new<S: Into<String>>(uri: S) -> Result<Client, Error> {
         let client = reqwest::Client::builder()
             .gzip(true)
             .timeout(Duration::new(4, 0))
@@ -30,7 +30,7 @@ impl Client {
 
         Ok(Client {
             _client: client,
-            uri: uri,
+            uri: uri.into(),
             _gzip: true,
             _timeout: 4,
             dbs: Vec::new(),
@@ -51,13 +51,13 @@ impl Client {
         self
     }
 
-    pub fn set_uri(&mut self, uri: String) -> &Self {
-        self.uri = uri;
+    pub fn set_uri<S: Into<String>>(&mut self, uri: S) -> &Self {
+        self.uri = uri.into();
         self
     }
 
-    pub fn set_prefix(&mut self, prefix: String) -> &Self {
-        self.db_prefix = prefix;
+    pub fn set_prefix<S: Into<String>>(&mut self, prefix: S) -> &Self {
+        self.db_prefix = prefix.into();
         self
     }
 
@@ -68,8 +68,8 @@ impl Client {
         Ok(self)
     }
 
-    pub fn timeout(&mut self, to: u8) -> Result<&Self, Error> {
-        self._timeout = to;
+    pub fn timeout<U: Into<u8>>(&mut self, to: U) -> Result<&Self, Error> {
+        self._timeout = to.into();
         self._client = self.create_client()?;
 
         Ok(self)
@@ -82,12 +82,12 @@ impl Client {
         Ok(data)
     }
 
-    fn build_dbname(&self, dbname: &'static str) -> String {
-        self.db_prefix.clone() + dbname
+    fn build_dbname<S: AsRef<str>>(&self, dbname: S) -> String {
+        format!("{}{}", self.db_prefix, dbname.as_ref())
     }
 
-    pub fn db(&self, dbname: &'static str) -> Result<Database, Error> {
-        let name = self.build_dbname(dbname);
+    pub fn db<S: AsRef<str>>(&self, dbname: S) -> Result<Database, Error> {
+        let name = self.build_dbname(&dbname);
 
         let db = Database::new(name.clone(), self.clone());
 
@@ -99,12 +99,12 @@ impl Client {
 
         match head_response.status() {
             StatusCode::Ok => Ok(db),
-            _ => self.make_db(dbname),
+            _ => self.make_db(&dbname),
         }
     }
 
-    pub fn make_db(&self, dbname: &'static str) -> Result<Database, Error> {
-        let name = self.build_dbname(dbname);
+    pub fn make_db<S: AsRef<str>>(&self, dbname: S) -> Result<Database, Error> {
+        let name = self.build_dbname(&dbname);
 
         let db = Database::new(name.clone(), self.clone());
 
@@ -125,7 +125,7 @@ impl Client {
         }
     }
 
-    pub fn destroy_db(&self, dbname: &'static str) -> Result<bool, Error> {
+    pub fn destroy_db<S: AsRef<str>>(&self, dbname: S) -> Result<bool, Error> {
         let path = self.create_path(self.build_dbname(dbname), None)?;
         let response = self._client.delete(&path)
             .header(reqwest::header::ContentType::json())
@@ -146,11 +146,11 @@ impl Client {
         Ok(status)
     }
 
-    fn create_path(&self,
-        path: String,
+    fn create_path<S: AsRef<str>>(&self,
+        path: S,
         args: Option<HashMap<String, String>>
     ) -> Result<String, Error> {
-        let mut uri = Url::parse(&self.uri)?.join(&path)?;
+        let mut uri = Url::parse(&self.uri)?.join(path.as_ref())?;
 
         if let Some(ref map) = args {
             let mut qp = uri.query_pairs_mut();
@@ -162,9 +162,9 @@ impl Client {
         Ok(uri.into_string())
     }
 
-    pub fn req(&self,
+    pub fn req<S: AsRef<str>>(&self,
         method: Method,
-        path: String,
+        path: S,
         opts: Option<HashMap<String, String>>
     ) -> Result<RequestBuilder, Error> {
         let uri = self.create_path(path, opts)?;
@@ -175,27 +175,27 @@ impl Client {
         Ok(req)
     }
 
-    pub fn get(&self, path: String, args: Option<HashMap<String, String>>) -> Result<RequestBuilder, Error> {
+    pub fn get<S: AsRef<str>>(&self, path: S, args: Option<HashMap<String, String>>) -> Result<RequestBuilder, Error> {
         Ok(self.req(Method::Get, path, args)?)
     }
 
-    pub fn post(&self, path: String, body: String) -> Result<RequestBuilder, Error> {
+    pub fn post<S: AsRef<str>>(&self, path: S, body: String) -> Result<RequestBuilder, Error> {
         let mut req = self.req(Method::Post, path, None)?;
         req.body(body);
         Ok(req)
     }
 
-    pub fn put(&self, path: String, body: String) -> Result<RequestBuilder, Error> {
+    pub fn put<S: AsRef<str>>(&self, path: S, body: String) -> Result<RequestBuilder, Error> {
         let mut req = self.req(Method::Put, path, None)?;
         req.body(body);
         Ok(req)
     }
 
-    pub fn head(&self, path: String, args: Option<HashMap<String, String>>) -> Result<RequestBuilder, Error> {
+    pub fn head<S: AsRef<str>>(&self, path: S, args: Option<HashMap<String, String>>) -> Result<RequestBuilder, Error> {
         Ok(self.req(Method::Head, path, args)?)
     }
 
-    pub fn delete(&self, path: String, args: Option<HashMap<String, String>>) -> Result<RequestBuilder, Error> {
+    pub fn delete<S: AsRef<str>>(&self, path: S, args: Option<HashMap<String, String>>) -> Result<RequestBuilder, Error> {
         Ok(self.req(Method::Delete, path, args)?)
     }
 }
