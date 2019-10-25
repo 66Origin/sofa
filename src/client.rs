@@ -4,6 +4,7 @@ use failure::Error;
 use serde_json::from_reader;
 
 use reqwest::{self, Url, Method, RequestBuilder, StatusCode};
+use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE, REFERER};
 
 use ::database::*;
 use ::types::*;
@@ -94,11 +95,11 @@ impl Client {
         let path = self.create_path(name, None)?;
 
         let head_response = self._client.head(&path)
-            .header(reqwest::header::ContentType::json())
+            .header(CONTENT_TYPE, HeaderValue::from_static("application/json"))
             .send()?;
 
         match head_response.status() {
-            StatusCode::Ok => Ok(db),
+            StatusCode::OK => Ok(db),
             _ => self.make_db(dbname),
         }
     }
@@ -111,7 +112,7 @@ impl Client {
         let path = self.create_path(name, None)?;
 
         let put_response = self._client.put(&path)
-            .header(reqwest::header::ContentType::json())
+            .header(CONTENT_TYPE, HeaderValue::from_static("application/json"))
             .send()?;
 
         let s: CouchResponse = from_reader(put_response)?;
@@ -128,7 +129,7 @@ impl Client {
     pub fn destroy_db(&self, dbname: &'static str) -> Result<bool, Error> {
         let path = self.create_path(self.build_dbname(dbname), None)?;
         let response = self._client.delete(&path)
-            .header(reqwest::header::ContentType::json())
+            .header(CONTENT_TYPE, HeaderValue::from_static("application/json"))
             .send()?;
 
         let s: CouchResponse = from_reader(response)?;
@@ -138,7 +139,7 @@ impl Client {
 
     pub fn check_status(&self) -> Result<CouchStatus, Error> {
         let response = self._client.get(&self.uri)
-            .header(reqwest::header::ContentType::json())
+            .header(CONTENT_TYPE, HeaderValue::from_static("application/json"))
             .send()?;
 
         let status = from_reader(response)?;
@@ -168,34 +169,34 @@ impl Client {
         opts: Option<HashMap<String, String>>
     ) -> Result<RequestBuilder, Error> {
         let uri = self.create_path(path, opts)?;
-        let mut req = self._client.request(method, &uri);
-        req.header(reqwest::header::Referer::new(uri.clone()));
-        req.header(reqwest::header::ContentType::json());
+        let mut headers = HeaderMap::new();
+        headers.insert(REFERER, HeaderValue::from_str(uri.as_str())?);
+        headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
+
+        let req = self._client.request(method, &uri).headers(headers);
 
         Ok(req)
     }
 
     pub fn get(&self, path: String, args: Option<HashMap<String, String>>) -> Result<RequestBuilder, Error> {
-        Ok(self.req(Method::Get, path, args)?)
+        Ok(self.req(Method::GET, path, args)?)
     }
 
     pub fn post(&self, path: String, body: String) -> Result<RequestBuilder, Error> {
-        let mut req = self.req(Method::Post, path, None)?;
-        req.body(body);
+        let req = self.req(Method::POST, path, None)?.body(body);
         Ok(req)
     }
 
     pub fn put(&self, path: String, body: String) -> Result<RequestBuilder, Error> {
-        let mut req = self.req(Method::Put, path, None)?;
-        req.body(body);
+        let req = self.req(Method::PUT, path, None)?.body(body);
         Ok(req)
     }
 
     pub fn head(&self, path: String, args: Option<HashMap<String, String>>) -> Result<RequestBuilder, Error> {
-        Ok(self.req(Method::Head, path, args)?)
+        Ok(self.req(Method::HEAD, path, args)?)
     }
 
     pub fn delete(&self, path: String, args: Option<HashMap<String, String>>) -> Result<RequestBuilder, Error> {
-        Ok(self.req(Method::Delete, path, args)?)
+        Ok(self.req(Method::DELETE, path, args)?)
     }
 }

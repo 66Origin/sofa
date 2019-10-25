@@ -1,6 +1,6 @@
 [package]
 name = "sofa"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Mathieu Amiot <mathieu.amiot@yellowinnovation.fr>"]
 license = "MIT/Apache-2.0"
 description = "Sofa - CouchDB for Rust"
@@ -20,7 +20,7 @@ failure = "0.1"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-reqwest = "0.8"
+reqwest = "^0.9"
 
 [dev-dependencies]
 pretty_assertions = "0.5"

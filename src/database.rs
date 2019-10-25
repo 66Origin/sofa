@@ -57,9 +57,9 @@ impl Database {
         let request = self._client.post(path, "".into());
 
         request
-            .and_then(|mut req| {
+            .and_then(|req| {
                 Ok(req.send()
-                    .and_then(|res| Ok(res.status() == StatusCode::Accepted))
+                    .and_then(|res| Ok(res.status() == StatusCode::ACCEPTED))
                     .unwrap_or(false))
             })
             .unwrap_or(false)
@@ -73,9 +73,9 @@ impl Database {
         let request = self._client.post(path, "".into());
 
         request
-            .and_then(|mut req| {
+            .and_then(|req| {
                 Ok(req.send()
-                    .and_then(|res| Ok(res.status() == StatusCode::Accepted))
+                    .and_then(|res| Ok(res.status() == StatusCode::ACCEPTED))
                     .unwrap_or(false))
             })
             .unwrap_or(false)
@@ -86,9 +86,9 @@ impl Database {
         let request = self._client.post(self.create_compact_path(index), "".into());
 
         request
-            .and_then(|mut req| {
+            .and_then(|req| {
                 Ok(req.send()
-                    .and_then(|res| Ok(res.status() == StatusCode::Accepted))
+                    .and_then(|res| Ok(res.status() == StatusCode::ACCEPTED))
                     .unwrap_or(false))
             })
             .unwrap_or(false)
@@ -99,11 +99,11 @@ impl Database {
         let request = self._client.head(self.create_document_path(id), None);
 
         request
-            .and_then(|mut req| {
+            .and_then(|req| {
                 Ok(req.send()
                     .and_then(|res| {
                         Ok(match res.status() {
-                            StatusCode::Ok | StatusCode::NotModified => true,
+                            StatusCode::OK | StatusCode::NOT_MODIFIED => true,
                             _ => false,
                         })
                     })
@@ -266,11 +266,11 @@ impl Database {
         );
 
         request
-            .and_then(|mut req| {
+            .and_then(|req| {
                 Ok(req.send()
                     .and_then(|res| {
                         Ok(match res.status() {
-                            StatusCode::Ok | StatusCode::Accepted => true,
+                            StatusCode::OK | StatusCode::ACCEPTED => true,
                             _ => false,
                         })
                     })
