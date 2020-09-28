@@ -7,6 +7,11 @@
 
 ![sofa-logo](https://raw.githubusercontent.com/mibes/sofa/master/docs/logo-sofa.png "Logo Sofa")
 
+## Migration Notice
+
+Please note that we are no longer maintaining this fork, but have spun off a new project: 
+[couch-rs](https://github.com/mibes/couch-rs)  
+
 ## Documentation
 
 Here: [http://docs.rs/sofa](http://docs.rs/sofa)
