@@ -1,4 +1,7 @@
 use super::*;
+use serde::{Serialize, Deserialize};
+use find::{SortSpec};
+use document::{DocumentId};
 
 /// Index fields abstraction
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone)]
@@ -9,7 +12,7 @@ pub struct IndexFields {
 impl IndexFields {
     pub fn new(fields: Vec<SortSpec>) -> IndexFields {
         IndexFields {
-            fields: fields
+            fields
         }
     }
 }
@@ -22,16 +25,6 @@ pub struct Index {
     #[serde(rename = "type")]
     pub index_type: String,
     pub def: IndexFields
-}
-
-/// Index created abstraction
-#[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Clone)]
-pub struct IndexCreated {
-    pub result: Option<String>,
-    pub id: Option<String>,
-    pub name: Option<String>,
-    pub error: Option<String>,
-    pub reason: Option<String>
 }
 
 /// Database index list abstraction

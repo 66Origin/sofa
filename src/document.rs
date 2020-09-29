@@ -1,8 +1,8 @@
-use database::*;
-use serde_json;
 use serde_json::Value;
 use std::ops::{Index, IndexMut};
-use types::*;
+use serde::{Serialize, Deserialize};
+use crate::types::document::{DocumentId};
+use crate::database::Database;
 
 /// Document abstracts the handling of JSON values and provides direct access
 /// and casting to the fields of your documents You can get access to the
@@ -25,7 +25,7 @@ impl Document {
         Document {
             _id: json_extr!(doc["_id"]),
             _rev: json_extr!(doc["_rev"]),
-            doc: doc,
+            doc,
         }
     }
 
@@ -68,19 +68,19 @@ impl Document {
 
     /// Recursively populates field (must be an array of IDs from another
     /// database) with provided database documents
-    pub fn populate(&mut self, field: &String, db: Database) -> &Self {
-        let ref val = self[field].clone();
+    pub async fn populate(&mut self, field: &str, db: Database) -> &Self {
+        let val = &self[field].clone();
         if *val == Value::Null {
             return self;
         }
 
         let ids = val.as_array()
             .unwrap_or(&Vec::new())
-            .into_iter()
+            .iter()
             .map(|v| s!(v.as_str().unwrap_or("")))
             .collect();
 
-        let data = db.get_bulk(ids).and_then(|docs| Ok(docs.get_data()));
+        let data = db.get_bulk(ids).await.map(|docs| docs.get_data());
 
         match data {
             Ok(data) => {
@@ -139,7 +139,7 @@ pub struct DocumentCollectionItem {
 impl DocumentCollectionItem {
     pub fn new(doc: Document) -> DocumentCollectionItem {
         let id = doc._id.clone();
-        DocumentCollectionItem { doc: doc, id: id }
+        DocumentCollectionItem { doc, id }
     }
 }
 
@@ -148,9 +148,10 @@ impl DocumentCollectionItem {
 /// implementation of `Index` and `IndexMut`
 #[derive(Default, Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct DocumentCollection {
-    pub offset: u32,
+    pub offset: Option<u32>,
     pub rows: Vec<DocumentCollectionItem>,
     pub total_rows: u32,
+    pub bookmark: Option<String>,
 }
 
 impl DocumentCollection {
@@ -158,9 +159,15 @@ impl DocumentCollection {
         let rows: Vec<Value> = json_extr!(doc["rows"]);
         let items: Vec<DocumentCollectionItem> = rows.into_iter()
             .filter(|d| {
-                // Remove _design documents
-                let id: String = json_extr!(d["doc"]["_id"]);
-                !id.starts_with('_')
+                let maybe_err: Option<String> = json_extr!(d["error"]);
+                if maybe_err.is_some() {
+                    // remove errors
+                    false
+                } else {
+                    // Remove _design documents
+                    let id: String = json_extr!(d["doc"]["_id"]);
+                    !id.starts_with('_')
+                }
             })
             .map(|d| {
                 let document: Value = json_extr!(d["doc"]);
@@ -172,16 +179,18 @@ impl DocumentCollection {
             offset: json_extr!(doc["offset"]),
             total_rows: items.len() as u32,
             rows: items,
+            bookmark: Option::None,
         }
     }
 
-    pub fn new_from_documents(docs: Vec<Document>) -> DocumentCollection {
+    pub fn new_from_documents(docs: Vec<Document>, bookmark: Option<String>) -> DocumentCollection {
         let len = docs.len() as u32;
 
         DocumentCollection {
-            offset: 0,
+            offset: Some(0),
             total_rows: len,
-            rows: docs.into_iter().map(|d| DocumentCollectionItem::new(d)).collect(),
+            rows: docs.into_iter().map(DocumentCollectionItem::new).collect(),
+            bookmark,
         }
     }
 

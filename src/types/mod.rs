@@ -1,4 +1,7 @@
-mod_use!(system);
-mod_use!(document);
-mod_use!(find);
-mod_use!(index);
+pub mod view;
+pub mod design;
+pub mod system;
+pub mod document;
+pub mod find;
+pub mod index;
+pub mod query;
